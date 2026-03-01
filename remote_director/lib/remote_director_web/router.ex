@@ -17,8 +17,7 @@ defmodule RemoteDirectorWeb.Router do
   scope "/", RemoteDirectorWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-    live "/pentagram", ScoreLive.Form
+    live "/", ScoreLive.Form
   end
 
   # Other scopes may use custom stacks.
