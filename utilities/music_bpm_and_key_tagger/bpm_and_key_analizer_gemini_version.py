@@ -100,6 +100,38 @@ def get_key(y, sr):
 # --- Main Processing Function (UPDATED LOGIC) ---
 
 
+def cleanup_macos_files(folder_path):
+    """
+    Removes macOS resource fork files (._*) only if a corresponding
+    audio file exists (e.g., removes ._song.mp3 only if song.mp3 exists).
+    """
+    removed_count = 0
+
+    # Get list of all audio files in the directory
+    audio_files = set()
+    for filename in os.listdir(folder_path):
+        if filename.lower().endswith(AUDIO_EXTENSIONS) and not filename.startswith('.'):
+            audio_files.add(filename)
+
+    # Check for ._* files and only remove if corresponding audio file exists
+    for filename in os.listdir(folder_path):
+        if filename.startswith("._"):
+            # Get the original filename without the ._ prefix
+            original_filename = filename[2:]  # Remove the first 2 characters (._)
+
+            # Only delete if the corresponding audio file exists
+            if original_filename in audio_files:
+                filepath = os.path.join(folder_path, filename)
+                try:
+                    os.remove(filepath)
+                    removed_count += 1
+                except Exception as e:
+                    print(f"Warning: Could not remove {filename}: {e}")
+
+    if removed_count > 0:
+        print(f"\nCleaned up {removed_count} macOS metadata files (._*)")
+
+
 def process_folder(folder_path):
     """
     Iterates through a folder, analyzing and filling in missing
@@ -117,6 +149,10 @@ def process_folder(folder_path):
     file_pattern = re.compile(r"^(\d{2})-(\S{2,3})-(\S{1,3})-(.*)$")
 
     for filename in os.listdir(folder_path):
+        # Skip hidden files (files starting with '.')
+        if filename.startswith('.'):
+            continue
+
         if not filename.lower().endswith(AUDIO_EXTENSIONS):
             continue
 
@@ -203,6 +239,9 @@ def process_folder(folder_path):
                 print(f"\n[ERROR] Could not rename {filename}: {e}")
         elif new_filename and new_filename == filename:
             print("  -> Analysis complete, no rename needed.\n")
+
+    # Clean up macOS metadata files
+    cleanup_macos_files(folder_path)
 
     print("---")
     print("Batch processing complete.")
